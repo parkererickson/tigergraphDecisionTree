@@ -1,0 +1,33 @@
+CREATE QUERY classify(VERTEX<Person> person) FOR GRAPH Run_Rules SYNTAX v2{ 
+  /* Write query logic here */ 
+  SumAccum<INT> @touched;
+  OrAccum @@found;
+  SetAccum<VERTEX> @@classifications;
+  SetAccum<VERTEX<SubRule>> @@curRules;
+  p = {person};
+  
+  initialRules = SELECT r FROM p -(_>)- :attr -(_>)- SubRule:r ACCUM r.@touched += 1
+                 POST-ACCUM
+                  IF (r.ruleType == "AND" AND r.@touched > 1)
+                  OR (r.ruleType == "NOT" AND r.@touched == 0) THEN
+                    @@curRules += r
+                  END;
+  
+  WHILE NOT @@found LIMIT 10 DO
+    rules = {@@curRules};
+    class = SELECT c FROM rules -(_>)- Outcome:c ACCUM @@classifications += c;
+    IF class.size() > 0 THEN
+      PRINT class;
+      @@found = TRUE;
+    ELSE
+      @@curRules.clear();
+      rules = SELECT r FROM rules -(RULE_HAS_SUBRULE>)-SubRule:r
+              ACCUM r.@touched += 1
+              POST-ACCUM
+                IF (r.ruleType == "AND" AND r.@touched > 1)
+                OR (r.ruleType == "NOT" AND r.@touched == 0) THEN
+                  @@curRules += r
+                END;
+    END;
+  END;
+}
