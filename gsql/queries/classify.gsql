@@ -1,4 +1,6 @@
-CREATE QUERY classify(VERTEX<Person> person) FOR GRAPH Run_Rules SYNTAX v2{ 
+USE GRAPH @graphname@
+
+CREATE QUERY classify(VERTEX<Person> person) FOR GRAPH @graphname@ SYNTAX v2{ 
   /* Write query logic here */ 
   SumAccum<INT> @touched;
   OrAccum @@found;
@@ -31,3 +33,5 @@ CREATE QUERY classify(VERTEX<Person> person) FOR GRAPH Run_Rules SYNTAX v2{
     END;
   END;
 }
+
+INSTALL QUERY classify
